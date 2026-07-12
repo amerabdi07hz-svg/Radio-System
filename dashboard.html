@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>منظومة الراديو - لوحة التحكم</title>
+    <link rel="stylesheet" href="dashboard.css?v=6">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <h3>جاري معالجة البيانات...</h3>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-container"></div>
+
+    <!-- ===== Navbar ===== -->
+    <header class="navbar">
+        <div class="nav-brand">
+            <span class="nav-logo">📡</span>
+            <h2>منظومة الراديو</h2>
+        </div>
+        <div class="nav-tabs">
+            <button id="tab-devices" class="tab-btn active">
+                <span class="tab-icon">📱</span>
+                <span class="tab-label">الأجهزة المسلمة</span>
+            </button>
+            <button id="tab-store" class="tab-btn">
+                <span class="tab-icon">📦</span>
+                <span class="tab-label">المخزن</span>
+            </button>
+            <button id="tab-purchases" class="tab-btn">
+                <span class="tab-icon">🛒</span>
+                <span class="tab-label">المشتريات</span>
+            </button>
+            <button id="tab-archive" class="tab-btn" style="display:none;">
+                <span class="tab-icon">🗂️</span>
+                <span class="tab-label">الأرشيف</span>
+            </button>
+            <button id="tab-profile" class="tab-btn profile-nav-btn">
+                <span class="tab-icon">👤</span>
+                <span class="tab-label">الملف الشخصي</span>
+            </button>
+        </div>
+        <div class="nav-actions">
+            <button id="logout-btn" class="logout-btn">تسجيل الخروج</button>
+        </div>
+    </header>
+
+    <!-- ===== Stats Cards ===== -->
+    <div class="stats-row">
+        <div class="stat-card stat-blue">
+            <div class="stat-icon">📱</div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-devices">0</span>
+                <span class="stat-label">الأجهزة المسلمة</span>
+            </div>
+        </div>
+        <div class="stat-card stat-green">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-store">0</span>
+                <span class="stat-label">في المخزن</span>
+            </div>
+        </div>
+        <div class="stat-card stat-purple">
+            <div class="stat-icon">🛒</div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-purchases">0</span>
+                <span class="stat-label">طلبات الشراء</span>
+            </div>
+        </div>
+        <div class="stat-card stat-amber">
+            <div class="stat-icon">👥</div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-users">0</span>
+                <span class="stat-label">المستخدمين</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Main Content ===== -->
+    <main class="container">
+
+        <!-- ===== DEVICES SECTION ===== -->
+        <section id="devices-section" class="content-section active">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-title">
+                        <span class="section-badge devices-badge">الأجهزة المسلمة</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn action-report" onclick="openMainReport('devices')">
+                            <span>📄</span> التقرير
+                        </button>
+                        <button class="action-btn action-add" id="add-device-btn">
+                            <span>＋</span> إضافة جهاز
+                        </button>
+                        <button class="action-btn action-return" id="return-device-btn">
+                            <span>🔄</span> استرجاع
+                        </button>
+                    </div>
+                </div>
+                <div class="section-toolbar">
+                    <div class="search-group">
+                        <input type="text" id="devices-search-input" class="section-search" placeholder="ابحث برقم التسلسل، الاسم، المستلم، رقم التوظيف...">
+                        <button class="search-btn" onclick="executeSearch('devices')">🔍</button>
+                    </div>
+                    <div class="toolbar-actions">
+                        <label for="excel-upload" class="action-btn action-upload" id="upload-excel-btn">
+                            <span>📁</span> رفع إكسل
+                        </label>
+                        <input type="file" id="excel-upload" accept=".xlsx, .xls" style="display:none;">
+                        <button id="clear-data-btn" class="action-btn action-danger">
+                            <span>🗑️</span> مسح
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="devices-table">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>رقم التسلسل</th><th>اسم الجهاز</th><th>النوع</th><th>ID</th>
+                                <th>مكان العمل</th><th>تاريخ التسليم</th><th>المستلم</th><th>رقم التوظيف</th>
+                                <th>الصفة</th><th>الإدارة</th><th>الهاتف</th><th>اللوحة</th><th>ملاحظات</th>
+                                <th>حالة الإدخال</th><th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== STORE SECTION ===== -->
+        <section id="store-section" class="content-section">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-title">
+                        <span class="section-badge store-badge">المخزن العام</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn action-report" onclick="openMainReport('store')">
+                            <span>📄</span> التقرير
+                        </button>
+                        <button class="action-btn action-add" id="add-store-btn">
+                            <span>＋</span> إضافة للمخزن
+                        </button>
+                    </div>
+                </div>
+                <div class="section-toolbar">
+                    <div class="search-group">
+                        <input type="text" id="store-search-input" class="section-search" placeholder="ابحث في المخزن...">
+                        <button class="search-btn" onclick="executeSearch('store')">🔍</button>
+                    </div>
+                    <p class="toolbar-hint">انقر بالزر الأيمن على رقم التسلسل لتسليم جهاز</p>
+                </div>
+                <div class="table-responsive">
+                    <table id="store-table">
+                        <thead>
+                            <tr><th>#</th><th>رقم التسلسل</th><th>اسم الجهاز</th><th>النوع</th><th>الحالة</th><th>ملاحظات</th><th>حالة الإدخال</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody id="store-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PURCHASES SECTION ===== -->
+        <section id="purchases-section" class="content-section">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-title">
+                        <span class="section-badge purchases-badge">المشتريات</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn action-report" onclick="openMainReport('purchases')">
+                            <span>📄</span> طباعة
+                        </button>
+                        <button class="action-btn action-add" id="add-purchase-btn">
+                            <span>＋</span> إضافة طلب شراء
+                        </button>
+                    </div>
+                </div>
+                <div class="section-toolbar">
+                    <div class="search-group">
+                        <input type="text" id="purchases-search-input" class="section-search" placeholder="ابحث برقم الطلبية، الطريقة، النوع...">
+                        <button class="search-btn" onclick="executeSearch('purchases')">🔍</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="purchases-table">
+                        <thead>
+                            <tr><th>#</th><th>رقم الطلبية</th><th>طريقة الشراء</th><th>نوع الجهاز</th><th>إضافي 1</th><th>إضافي 2</th><th>إضافي 3</th><th>حالة الإدخال</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody id="purchases-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== ARCHIVE SECTION ===== -->
+        <section id="archive-section" class="content-section">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-title">
+                        <span class="section-badge archive-badge">🗂️ سجل الأرشيف</span>
+                    </div>
+                    <div class="section-actions">
+                        <button id="clear-archive-btn" class="action-btn action-danger">
+                            <span>🗑️</span> مسح الأرشيف
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="archive-table">
+                        <thead>
+                            <tr><th>#</th><th>المصدر</th><th>التفاصيل</th><th>تاريخ الحذف</th><th>المسؤول</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody id="archive-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PROFILE SECTION ===== -->
+        <section id="profile-section" class="content-section">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-title">
+                        <span class="section-badge profile-badge">👤 الملف الشخصي</span>
+                    </div>
+                </div>
+
+                <div class="profile-hero">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-meta">
+                        <h3 id="user-display-name">...</h3>
+                        <span class="profile-role" id="user-display-role">...</span>
+                        <span class="profile-id">رقم التوظيف: <span id="user-display-empid">...</span></span>
+                    </div>
+                </div>
+
+                <div class="profile-grid">
+                    <div class="profile-card">
+                        <h4>🔑 تغيير كلمة السر</h4>
+                        <form id="change-password-form">
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>كلمة السر الحالية</label>
+                                <input type="password" id="current-password" required placeholder="أدخل كلمة السر الحالية">
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>كلمة السر الجديدة</label>
+                                <input type="password" id="new-password" required placeholder="أدخل كلمة السر الجديدة">
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label>تأكيد كلمة السر</label>
+                                <input type="password" id="confirm-password" required placeholder="أعد إدخال كلمة السر">
+                            </div>
+                            <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">حفظ التغيير</button>
+                        </form>
+                    </div>
+
+                    <div class="profile-card" id="admin-add-user-card" style="display:none;">
+                        <h4>👥 إضافة مستخدم جديد</h4>
+                        <form id="add-user-form">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label>الاسم الكامل</label>
+                                <input type="text" id="new-user-name" required placeholder="اسم المستخدم">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label>رقم التوظيف</label>
+                                <input type="text" id="new-user-empid" required placeholder="مثال: 12345">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label>الصفة الوظيفية</label>
+                                <input type="text" id="new-user-role" required placeholder="مثال: مهندس">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label>كلمة السر</label>
+                                <input type="password" id="new-user-password" required placeholder="كلمة السر">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label>الصلاحية</label>
+                                <select id="new-user-permission" required>
+                                    <option value="full">🔓 كامل الصلاحيات</option>
+                                    <option value="readonly">👁️ قراءة فقط</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">إضافة المستخدم</button>
+                        </form>
+                    </div>
+
+                    <div class="profile-card" id="admin-backup-card" style="display:none;">
+                        <h4>💾 النسخ الاحتياطي</h4>
+                        <p style="font-size:14px;color:#64748b;line-height:1.7;margin-bottom:16px;">
+                            تحميل قاعدة البيانات بالكامل كملف Excel واحد يشمل جميع الأقسام، لحماية البيانات من الأخطاء البشرية.
+                        </p>
+                        <button id="admin-system-backup-btn" class="submit-btn" style="background:linear-gradient(135deg,#10b981,#059669);">📊 تحميل النسخة الاحتياطية</button>
+                    </div>
+                </div>
+
+                <div class="profile-card" id="admin-users-list-card" style="display:none;margin-top:20px;">
+                    <h4>👥 إدارة المستخدمين</h4>
+                    <div class="table-responsive" style="max-height:40vh;">
+                        <table>
+                            <thead>
+                                <tr><th>الاسم</th><th>رقم التوظيف</th><th>الصفة</th><th>الإجراءات</th></tr>
+                            </thead>
+                            <tbody id="users-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===== MODALS ===== -->
+
+    <!-- Context Menu for Search Results -->
+    <div id="context-menu" class="context-menu" style="display:none;">
+        <div class="context-menu-item" id="ctx-return">🔄 استرجاع للمخزن</div>
+        <div class="context-menu-item" id="ctx-edit">✏️ تعديل</div>
+        <div class="context-menu-item context-menu-danger" id="ctx-delete">🗑️ حذف</div>
+    </div>
+
+    <!-- Search Results Modal -->
+    <div id="search-results-modal" class="modal">
+        <div class="modal-content" style="width:95%;max-width:1400px;">
+            <span class="close-btn" id="close-search-results">&times;</span>
+            <div class="modal-header-line">
+                <h3>🔍 نتائج البحث</h3>
+                <button class="action-btn action-upload" onclick="openSearchPrintSettings()" style="background:linear-gradient(135deg,#1e293b,#334155);">
+                    🖨️ تصدير / طباعة
+                </button>
+            </div>
+            <div class="table-responsive" id="search-results-container" style="margin-top:16px;"></div>
+        </div>
+    </div>
+
+    <!-- Print Settings Modal -->
+    <div id="print-settings-modal" class="modal">
+        <div class="modal-content" style="max-width:520px;padding:36px;">
+            <span class="close-btn" id="close-print-settings">&times;</span>
+            <h3>🖨️ إعدادات الطباعة</h3>
+            <p style="color:#64748b;font-size:14px;margin:8px 0 16px;">اختر الأعمدة التي تريد تضمينها</p>
+            <div id="print-columns-container" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <div style="display:flex;gap:10px;margin-top:24px;">
+                <button class="submit-btn" id="confirm-print-btn" style="flex:1;background:linear-gradient(135deg,#1e293b,#334155);">🖨️ طباعة</button>
+                <button class="submit-btn" id="export-excel-btn" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);">📊 Excel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div id="return-modal" class="modal">
+        <div class="modal-content" style="width:95%;max-width:1200px;">
+            <span class="close-btn" id="close-return-modal">&times;</span>
+            <h3>🔄 استرجاع جهاز للمخزن</h3>
+            <div class="form-group full-width" style="margin:16px 0;">
+                <label style="color:#3b82f6;font-weight:600;">🔍 ابحث برقم التسلسل، الاسم، المستلم، أو رقم التوظيف:</label>
+                <input type="text" id="return-search-input" placeholder="اكتب للبحث..." style="width:100%;border:2px solid #e2e8f0;padding:12px;border-radius:12px;margin-top:6px;font-family:inherit;">
+            </div>
+            <div class="table-responsive" id="return-device-results" style="max-height:50vh;"></div>
+        </div>
+    </div>
+
+    <!-- Handover Modal -->
+    <div id="handover-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-handover-modal">&times;</span>
+            <h3>📤 تسليم جهاز من المخزن</h3>
+            <form id="handover-form">
+                <input type="hidden" id="handover-store-index">
+                <div class="form-grid">
+                    <div class="form-group"><label>ID</label><input type="text" id="handover-id"></div>
+                    <div class="form-group"><label>مكان العمل</label><input type="text" id="handover-location"></div>
+                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="handover-date"></div>
+                    <div class="form-group"><label>المستلم</label><input type="text" id="handover-receiverName"></div>
+                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="handover-empId"></div>
+                    <div class="form-group"><label>الصفة</label><input type="text" id="handover-jobTitle"></div>
+                    <div class="form-group"><label>الإدارة</label><input type="text" id="handover-department"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="text" id="handover-phone"></div>
+                    <div class="form-group"><label>رقم اللوحة</label><input type="text" id="handover-plateNum"></div>
+                    <div class="form-group full-width"><label>ملاحظات</label><textarea id="handover-notes" rows="3"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#10b981,#059669);">تأكيد التسليم</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div id="device-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-device-modal">&times;</span>
+            <h3>📱 إضافة جهاز جديد</h3>
+            <form id="add-device-form">
+                <div class="form-grid">
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="modal-serial"></div>
+                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="modal-deviceName"></div>
+                    <div class="form-group"><label>النوع</label><select id="modal-deviceType">
+                        <option value="" disabled selected>اختر</option>
+                        <option value="ثابت">ثابت</option><option value="يدوي">يدوي</option>
+                        <option value="ثابت (نوعية)">ثابت (نوعية)</option><option value="يدوي (نوعية)">يدوي (نوعية)</option>
+                        <option value="متحرك">متحرك</option><option value="ثابت بحري">ثابت بحري</option><option value="يدوي بحري">يدوي بحري</option>
+                    </select></div>
+                    <div class="form-group"><label>ID</label><input type="text" id="modal-id"></div>
+                    <div class="form-group"><label>مكان العمل</label><input type="text" id="modal-location"></div>
+                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="modal-date"></div>
+                    <div class="form-group"><label>المستلم</label><input type="text" id="modal-receiverName"></div>
+                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="modal-empId"></div>
+                    <div class="form-group"><label>الصفة</label><input type="text" id="modal-jobTitle"></div>
+                    <div class="form-group"><label>الإدارة</label><input type="text" id="modal-department"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="text" id="modal-phone"></div>
+                    <div class="form-group"><label>رقم اللوحة</label><input type="text" id="modal-plateNum"></div>
+                    <div class="form-group full-width"><label>ملاحظات</label><textarea id="modal-notes" rows="3"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn">💾 حفظ الجهاز</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Device Modal -->
+    <div id="edit-device-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-edit-device-modal">&times;</span>
+            <h3>✏️ تعديل بيانات جهاز</h3>
+            <form id="edit-device-form">
+                <input type="hidden" id="edit-device-index">
+                <div class="form-grid">
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="edit-modal-serial"></div>
+                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="edit-modal-deviceName"></div>
+                    <div class="form-group"><label>النوع</label><select id="edit-modal-deviceType">
+                        <option value="ثابت">ثابت</option><option value="يدوي">يدوي</option>
+                        <option value="ثابت (نوعية)">ثابت (نوعية)</option><option value="يدوي (نوعية)">يدوي (نوعية)</option>
+                        <option value="متحرك">متحرك</option><option value="ثابت بحري">ثابت بحري</option><option value="يدوي بحري">يدوي بحري</option>
+                    </select></div>
+                    <div class="form-group"><label>ID</label><input type="text" id="edit-modal-id"></div>
+                    <div class="form-group"><label>مكان العمل</label><input type="text" id="edit-modal-location"></div>
+                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="edit-modal-date"></div>
+                    <div class="form-group"><label>المستلم</label><input type="text" id="edit-modal-receiverName"></div>
+                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="edit-modal-empId"></div>
+                    <div class="form-group"><label>الصفة</label><input type="text" id="edit-modal-jobTitle"></div>
+                    <div class="form-group"><label>الإدارة</label><input type="text" id="edit-modal-department"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="text" id="edit-modal-phone"></div>
+                    <div class="form-group"><label>رقم اللوحة</label><input type="text" id="edit-modal-plateNum"></div>
+                    <div class="form-group full-width"><label>ملاحظات</label><textarea id="edit-modal-notes" rows="3"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">💾 حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Store Modal -->
+    <div id="store-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-store-modal">&times;</span>
+            <h3>📦 إضافة للمخزن</h3>
+            <form id="add-store-form">
+                <div class="form-grid">
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="store-modal-serial" required></div>
+                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="store-modal-deviceName" required></div>
+                    <div class="form-group"><label>النوع</label><select id="store-modal-deviceType" required>
+                        <option value="" disabled selected>اختر</option>
+                        <option value="ثابت">ثابت</option><option value="يدوي">يدوي</option>
+                        <option value="ثابت (نوعية)">ثابت (نوعية)</option><option value="يدوي (نوعية)">يدوي (نوعية)</option>
+                        <option value="متحرك">متحرك</option><option value="ثابت بحري">ثابت بحري</option><option value="يدوي بحري">يدوي بحري</option>
+                    </select></div>
+                    <div class="form-group"><label>الحالة</label><select id="store-modal-status" required>
+                        <option value="" disabled selected>اختر</option>
+                        <option value="جيد">جيد</option><option value="يحتاج الى بطارية">يحتاج بطارية</option>
+                        <option value="خردة">خردة</option><option value="اخرى">أخرى</option>
+                    </select></div>
+                    <div class="form-group" id="custom-status-group" style="display:none;">
+                        <label>اكتب الحالة</label><input type="text" id="store-modal-custom-status">
+                    </div>
+                    <div class="form-group full-width"><label>ملاحظات</label><textarea id="store-modal-notes" rows="3"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn">💾 حفظ في المخزن</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Store Modal -->
+    <div id="edit-store-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-edit-store-modal">&times;</span>
+            <h3>✏️ تعديل المخزن</h3>
+            <form id="edit-store-form">
+                <input type="hidden" id="edit-store-index">
+                <div class="form-grid">
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="edit-store-modal-serial" required></div>
+                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="edit-store-modal-deviceName" required></div>
+                    <div class="form-group"><label>النوع</label><select id="edit-store-modal-deviceType" required>
+                        <option value="ثابت">ثابت</option><option value="يدوي">يدوي</option>
+                        <option value="ثابت (نوعية)">ثابت (نوعية)</option><option value="يدوي (نوعية)">يدوي (نوعية)</option>
+                        <option value="متحرك">متحرك</option><option value="ثابت بحري">ثابت بحري</option><option value="يدوي بحري">يدوي بحري</option>
+                    </select></div>
+                    <div class="form-group"><label>الحالة</label><input type="text" id="edit-store-modal-status" required></div>
+                    <div class="form-group full-width"><label>ملاحظات</label><textarea id="edit-store-modal-notes" rows="3"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">💾 حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Purchase Modal -->
+    <div id="purchase-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-purchase-modal">&times;</span>
+            <h3>🛒 إضافة طلب شراء</h3>
+            <form id="add-purchase-form">
+                <div class="form-grid">
+                    <div class="form-group"><label>رقم الطلبية</label><input type="text" id="purchase-modal-orderNum" required></div>
+                    <div class="form-group"><label>طريقة الشراء</label><input type="text" id="purchase-modal-method" required></div>
+                    <div class="form-group"><label>نوع الجهاز</label><input type="text" id="purchase-modal-deviceType" required></div>
+                    <div class="form-group"><label>إضافي 1</label><input type="text" id="purchase-modal-col1"></div>
+                    <div class="form-group"><label>إضافي 2</label><input type="text" id="purchase-modal-col2"></div>
+                    <div class="form-group"><label>إضافي 3</label><input type="text" id="purchase-modal-col3"></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);">💾 حفظ طلب الشراء</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Purchase Modal -->
+    <div id="edit-purchase-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-edit-purchase-modal">&times;</span>
+            <h3>✏️ تعديل طلب شراء</h3>
+            <form id="edit-purchase-form">
+                <input type="hidden" id="edit-purchase-index">
+                <div class="form-grid">
+                    <div class="form-group"><label>رقم الطلبية</label><input type="text" id="edit-purchase-modal-orderNum" required></div>
+                    <div class="form-group"><label>طريقة الشراء</label><input type="text" id="edit-purchase-modal-method" required></div>
+                    <div class="form-group"><label>نوع الجهاز</label><input type="text" id="edit-purchase-modal-deviceType" required></div>
+                    <div class="form-group"><label>إضافي 1</label><input type="text" id="edit-purchase-modal-col1"></div>
+                    <div class="form-group"><label>إضافي 2</label><input type="text" id="edit-purchase-modal-col2"></div>
+                    <div class="form-group"><label>إضافي 3</label><input type="text" id="edit-purchase-modal-col3"></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">💾 حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js?v=6"></script>
+</body>
+</html>

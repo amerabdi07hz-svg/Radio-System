@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة الراديو - تسجيل الدخول</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-icon"><img src="شاشة تسجيل الدخول.jfif" alt="شعار"></div>
+        </div>
+        <form id="login-form">
+            <div class="input-group">
+                <label for="empId">رقم التوظيف</label>
+                <input type="text" id="empId" name="empId" placeholder="أدخل رقم التوظيف" required>
+            </div>
+            <div class="input-group">
+                <label for="password">كلمة السر</label>
+                <input type="password" id="password" name="password" placeholder="أدخل كلمة السر" required>
+            </div>
+            <button type="submit" id="login-btn">تسجيل الدخول</button>
+            <p id="error-message" class="error-text" style="display: none;">بيانات الدخول غير صحيحة!</p>
+        </form>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
