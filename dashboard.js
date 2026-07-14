@@ -378,16 +378,16 @@ function renderSearchResults() {
             { key: 'plateNum', label: 'اللوحة' },
             { key: 'notes', label: 'الملاحظات' }
         ];
-        html = '<table class="search-devices-table" style="width:100%;text-align:right;"><thead><tr>';
+        html = '<table class="search-devices-table" style="width:100%;text-align:right;"><thead><tr><th>العدد</th>';
         deviceHeaders.forEach(function(h) { html += '<th>' + h.label + '</th>'; });
         if (!isReadOnly) html += '<th>إجراء</th>';
         html += '</tr></thead><tbody>';
-        currentSearchResults.forEach(function(item) {
+        currentSearchResults.forEach(function(item, idx) {
             var origIdx = -1;
             for (var oi = 0; oi < devicesData.length; oi++) {
                 if (devicesData[oi].firebaseId === item.firebaseId) { origIdx = oi; break; }
             }
-            html += '<tr' + (origIdx !== -1 ? ' data-orig-idx="' + origIdx + '"' : '') + '>';
+            html += '<tr' + (origIdx !== -1 ? ' data-orig-idx="' + origIdx + '"' : '') + '><td>' + (idx + 1) + '</td>';
             deviceHeaders.forEach(function(h) { html += '<td>' + (item[h.key] || '') + '</td>'; });
             if (!isReadOnly) {
                 var actionBtns = '';
@@ -406,11 +406,11 @@ function renderSearchResults() {
             { key: 'status', label: 'الحالة' },
             { key: 'notes', label: 'الملاحظات' }
         ];
-        html = '<table class="search-store-table" style="width:100%;text-align:right;"><thead><tr>';
+        html = '<table class="search-store-table" style="width:100%;text-align:right;"><thead><tr><th>العدد</th>';
         storeHeaders.forEach(function(h) { html += '<th>' + h.label + '</th>'; });
         html += '</tr></thead><tbody>';
-        currentSearchResults.forEach(function(item) {
-            html += '<tr>';
+        currentSearchResults.forEach(function(item, idx) {
+            html += '<tr><td>' + (idx + 1) + '</td>';
             storeHeaders.forEach(function(h) { html += '<td>' + (item[h.key] || '') + '</td>'; });
             html += '</tr>';
         });
@@ -421,11 +421,11 @@ function renderSearchResults() {
             { key: 'deviceType', label: 'نوع الجهاز' },
             { key: 'notes', label: 'الملاحظات' }
         ];
-        html = '<table style="width:100%;text-align:right;"><thead><tr>';
+        html = '<table style="width:100%;text-align:right;"><thead><tr><th>العدد</th>';
         purchaseHeaders.forEach(function(h) { html += '<th>' + h.label + '</th>'; });
         html += '</tr></thead><tbody>';
-        currentSearchResults.forEach(function(item) {
-            html += '<tr>';
+        currentSearchResults.forEach(function(item, idx) {
+            html += '<tr><td>' + (idx + 1) + '</td>';
             purchaseHeaders.forEach(function(h) { html += '<td>' + (item[h.key] || '') + '</td>'; });
             html += '</tr>';
         });
