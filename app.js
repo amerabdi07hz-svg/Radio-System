@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // إعدادات فايربيس الخاصة بك
 const firebaseConfig = {
@@ -38,34 +38,8 @@ document.getElementById('login-form').addEventListener('submit', async function(
         await signInWithEmailAndPassword(auth, email, password);
         window.location.href = "dashboard.html";
     } catch (error) {
-        // إذا كان هذا الدخول الأول للمدير العام (نستخدم admin123 لأن فايربيس يشترط 6 أحرف على الأقل)
-        // ⚠️ تحذير أمني: هذا الشرط مخصص فقط لإنشاء أول حساب مدير عام عند أول تشغيل للنظام.
-        // بيانات الدخول هنا ظاهرة لأي شخص يفتح الكود من المتصفح (View Source).
-        // بعد إنشاء حساب المدير لأول مرة، يجب حذف هذا الشرط بالكامل من الكود
-        // أو تغيير القيمتين إلى قيم عشوائية مؤقتة تُستخدم لمرة واحدة ثم تُحذف فورًا.
-        if (empId === '34285' && password === 'admin123') {
-            try {
-                // إنشاء الحساب في السحابة
-                const userCred = await createUserWithEmailAndPassword(auth, email, password);
-                
-                // حفظ بيانات المدير في قاعدة البيانات
-                await setDoc(doc(db, "users", userCred.user.uid), {
-                    empId: '34285', 
-                    name: 'المدير العام', 
-                    role: 'مسؤول المنظومة', 
-                    permission: 'full'
-                });
-                
-                window.location.href = "dashboard.html";
-                return;
-            } catch (err) { 
-                console.error(err);
-                alert("حدث خطأ أثناء الإنشاء! تأكد أنك قمت بتفعيل (Email/Password) في Authentication في فايربيس، وأن قاعدة البيانات Firestore مفعلة بوضع (Test Mode).");
-            }
-        } else {
-            errorMessage.style.display = 'block';
-            errorMessage.textContent = 'رقم التوظيف أو كلمة السر غير صحيحة!';
-        }
+        errorMessage.style.display = 'block';
+        errorMessage.textContent = 'رقم التوظيف أو كلمة السر غير صحيحة!';
         
         loginBtn.textContent = 'تسجيل الدخول';
         loginBtn.disabled = false;
