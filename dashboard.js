@@ -269,19 +269,30 @@ function setupRealtimeListeners() {
 
 function getAuditNote(item) {
     if (item.lastModifiedBy && item.lastModifiedAt) {
-        return '<br><span style="font-size:10px; color:#e74c3c; display:block; margin-top:4px;">\u062a\u0639\u062f\u064a\u0644: ' + item.lastModifiedBy + '<br>' + item.lastModifiedAt + '</span>';
+        return '<br><span style="font-size:10px; color:#e74c3c; display:block; margin-top:4px;">\u062a\u0639\u062f\u064a\u0644: ' + escapeHtml(item.lastModifiedBy) + '<br>' + escapeHtml(item.lastModifiedAt) + '</span>';
     }
     return '';
 }
 
-function safeVal(v) { return (!v || v === 'undefined' || v === 'null') ? '' : v; }
+function escapeHtml(v) {
+    if (v === null || v === undefined) return '';
+    return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
+function safeVal(v) { return (!v || v === 'undefined' || v === 'null') ? '' : escapeHtml(v); }
 
 window.loadDevicesTable = function() {
     var tableBody = document.getElementById('table-body');
     if (!tableBody) return;
     tableBody.innerHTML = "";
     devicesData.forEach(function(item, index) {
-        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + (item.addedBy || '') + '</span>' + getAuditNote(item);
+        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + escapeHtml(item.addedBy) + '</span>' + getAuditNote(item);
         var actions = isReadOnly ? '<span style="color:#7f8c8d;font-size:12px;">\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637</span>' : '<button class="action-icon-btn" onclick="openEditDevice(' + index + ')">\u270F\uFE0F</button><button class="action-icon-btn" onclick="deleteDevice(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
         tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')">' + safeVal(item.serial) + '</td><td class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')">' + safeVal(item.deviceName) + '</td><td>' + safeVal(item.deviceType) + '</td><td>' + safeVal(item.id) + '</td><td>' + safeVal(item.location) + '</td><td>' + safeVal(item.date) + '</td><td class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')">' + safeVal(item.receiverName) + '</td><td>' + safeVal(item.empId) + '</td><td>' + safeVal(item.jobTitle) + '</td><td>' + safeVal(item.department) + '</td><td>' + safeVal(item.phone) + '</td><td>' + safeVal(item.plateNum) + '</td><td>' + safeVal(item.notes) + '</td><td>' + auditStr + '</td><td>' + actions + '</td></tr>';
     });
@@ -292,9 +303,9 @@ window.loadStoreTable = function() {
     if (!storeTableBody) return;
     storeTableBody.innerHTML = "";
     storeData.forEach(function(item, index) {
-        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + (item.addedBy || '') + '</span>' + getAuditNote(item);
+        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + escapeHtml(item.addedBy) + '</span>' + getAuditNote(item);
         var actions = isReadOnly ? '<span style="color:#7f8c8d;font-size:12px;">\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637</span>' : '<button class="action-icon-btn" onclick="openEditStore(' + index + ')">\u270F\uFE0F</button><button class="action-icon-btn" onclick="deleteStore(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
-        storeTableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td class="right-click-cell" oncontextmenu="handoverRightClick(event, ' + index + ')">' + (item.serial || '') + '</td><td>' + (item.deviceName || '') + '</td><td class="right-click-cell" oncontextmenu="handoverRightClick(event, ' + index + ')">' + (item.deviceType || '') + '</td><td><span class="status-badge">' + (item.status || '') + '</span></td><td>' + (item.notes || '') + '</td><td>' + auditStr + '</td><td>' + actions + '</td></tr>';
+        storeTableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td class="right-click-cell" oncontextmenu="handoverRightClick(event, ' + index + ')">' + safeVal(item.serial) + '</td><td>' + safeVal(item.deviceName) + '</td><td class="right-click-cell" oncontextmenu="handoverRightClick(event, ' + index + ')">' + safeVal(item.deviceType) + '</td><td><span class="status-badge">' + safeVal(item.status) + '</span></td><td>' + safeVal(item.notes) + '</td><td>' + auditStr + '</td><td>' + actions + '</td></tr>';
     });
 };
 
@@ -303,9 +314,9 @@ window.loadPurchasesTable = function() {
     if (!tableBody) return;
     tableBody.innerHTML = "";
     purchasesData.forEach(function(item, index) {
-        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + (item.addedBy || '') + '</span>' + getAuditNote(item);
+        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + escapeHtml(item.addedBy) + '</span>' + getAuditNote(item);
         var actions = isReadOnly ? '<span style="color:#7f8c8d;font-size:12px;">\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637</span>' : '<button class="action-icon-btn" onclick="openEditPurchase(' + index + ')">\u270F\uFE0F</button><button class="action-icon-btn" onclick="deletePurchase(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
-        tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td>' + (item.orderNum || '') + '</td><td>' + (item.method || '') + '</td><td>' + (item.deviceType || '') + '</td><td>' + (item.col1 || '') + '</td><td>' + (item.col2 || '') + '</td><td>' + (item.col3 || '') + '</td><td>' + auditStr + '</td><td>' + actions + '</td></tr>';
+        tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td>' + safeVal(item.orderNum) + '</td><td>' + safeVal(item.method) + '</td><td>' + safeVal(item.deviceType) + '</td><td>' + safeVal(item.col1) + '</td><td>' + safeVal(item.col2) + '</td><td>' + safeVal(item.col3) + '</td><td>' + auditStr + '</td><td>' + actions + '</td></tr>';
     });
 };
 
@@ -314,9 +325,9 @@ window.loadArchiveTable = function() {
     if (!tableBody) return;
     tableBody.innerHTML = "";
     archiveData.forEach(function(item, index) {
-        var details = item.source === "\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a" ? '\u0627\u0644\u0637\u0644\u0628\u064a\u0629: ' + (item.data ? item.data.orderNum : '') : '\u0627\u0644\u062a\u0633\u0644\u0633\u0644: ' + (item.data ? item.data.serial : '') + ' | \u0627\u0644\u062c\u0647\u0627\u0632: ' + (item.data ? item.data.deviceName : '');
+        var details = item.source === "\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a" ? '\u0627\u0644\u0637\u0644\u0628\u064a\u0629: ' + escapeHtml(item.data ? item.data.orderNum : '') : '\u0627\u0644\u062a\u0633\u0644\u0633\u0644: ' + escapeHtml(item.data ? item.data.serial : '') + ' | \u0627\u0644\u062c\u0647\u0627\u0632: ' + escapeHtml(item.data ? item.data.deviceName : '');
         var deleteBtn = isReadOnly ? '' : '<button class="action-icon-btn" onclick="deleteArchiveItem(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
-        tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td><span style="background:#e74c3c;color:white;padding:3px 8px;border-radius:3px;font-size:12px;">' + (item.source || '') + '</span></td><td>' + details + '</td><td style="font-family:monospace;">' + (item.deletedAt || '') + '</td><td style="font-weight:bold; color:#2c3e50;">' + (item.deletedBy || '') + '</td><td>' + deleteBtn + '</td></tr>';
+        tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td><span style="background:#e74c3c;color:white;padding:3px 8px;border-radius:3px;font-size:12px;">' + safeVal(item.source) + '</span></td><td>' + details + '</td><td style="font-family:monospace;">' + safeVal(item.deletedAt) + '</td><td style="font-weight:bold; color:#2c3e50;">' + safeVal(item.deletedBy) + '</td><td>' + deleteBtn + '</td></tr>';
     });
 };
 
@@ -327,7 +338,7 @@ window.renderUsersTable = function() {
     tbody.innerHTML = '';
     usersData.forEach(function(u) {
         var deleteBtn = (u.empId === currentUser.empId) ? '<span style="color:#7f8c8d;font-size:14px;">\u0623\u0646\u062a</span>' : '<button class="action-icon-btn" onclick="deleteUser(\'' + u.firebaseId + '\')">\uD83D\uDDD1\uFE0F</button>';
-        tbody.innerHTML += '<tr><td>' + (u.name || '') + '</td><td>' + (u.empId || '') + '</td><td>' + (u.role || '') + '</td><td>' + deleteBtn + '</td></tr>';
+        tbody.innerHTML += '<tr><td>' + safeVal(u.name) + '</td><td>' + safeVal(u.empId) + '</td><td>' + safeVal(u.role) + '</td><td>' + deleteBtn + '</td></tr>';
     });
 };
 
@@ -388,7 +399,7 @@ function renderSearchResults() {
                 if (devicesData[oi].firebaseId === item.firebaseId) { origIdx = oi; break; }
             }
             html += '<tr' + (origIdx !== -1 ? ' data-orig-idx="' + origIdx + '"' : '') + '><td>' + (idx + 1) + '</td>';
-            deviceHeaders.forEach(function(h) { html += '<td>' + (item[h.key] || '') + '</td>'; });
+            deviceHeaders.forEach(function(h) { html += '<td>' + safeVal(item[h.key]) + '</td>'; });
             if (!isReadOnly) {
                 var actionBtns = '';
                 if (origIdx !== -1) {
@@ -411,7 +422,7 @@ function renderSearchResults() {
         html += '</tr></thead><tbody>';
         currentSearchResults.forEach(function(item, idx) {
             html += '<tr><td>' + (idx + 1) + '</td>';
-            storeHeaders.forEach(function(h) { html += '<td>' + (item[h.key] || '') + '</td>'; });
+            storeHeaders.forEach(function(h) { html += '<td>' + safeVal(item[h.key]) + '</td>'; });
             html += '</tr>';
         });
     } else {
@@ -426,7 +437,7 @@ function renderSearchResults() {
         html += '</tr></thead><tbody>';
         currentSearchResults.forEach(function(item, idx) {
             html += '<tr><td>' + (idx + 1) + '</td>';
-            purchaseHeaders.forEach(function(h) { html += '<td>' + (item[h.key] || '') + '</td>'; });
+            purchaseHeaders.forEach(function(h) { html += '<td>' + safeVal(item[h.key]) + '</td>'; });
             html += '</tr>';
         });
     }
@@ -790,7 +801,7 @@ function populateReturnResults(filterText) {
     var matchCount = 0;
     devicesData.forEach(function(item, index) {
         if ((item.serial && cleanArabic(item.serial).toLowerCase().includes(q)) || (item.deviceName && cleanArabic(item.deviceName).toLowerCase().includes(q)) || (item.receiverName && cleanArabic(item.receiverName).toLowerCase().includes(q)) || (item.empId && item.empId.toLowerCase().includes(q))) {
-            html += '<tr><td>' + (item.serial || '') + '</td><td>' + (item.deviceName || '') + '</td><td style="font-weight:bold; color:#2980b9;">' + (item.receiverName || '') + '</td><td>' + (item.empId || '') + '</td><td><button class="return-btn" onclick="executeReturnModal(' + index + ')" style="padding: 6px 12px; font-size:12px;">\uD83D\uDD04 \u0627\u0633\u062a\u0631\u062c\u0627\u0639</button></td></tr>';
+            html += '<tr><td>' + safeVal(item.serial) + '</td><td>' + safeVal(item.deviceName) + '</td><td style="font-weight:bold; color:#2980b9;">' + safeVal(item.receiverName) + '</td><td>' + safeVal(item.empId) + '</td><td><button class="return-btn" onclick="executeReturnModal(' + index + ')" style="padding: 6px 12px; font-size:12px;">\uD83D\uDD04 \u0627\u0633\u062a\u0631\u062c\u0627\u0639</button></td></tr>';
             matchCount++;
         }
     });
@@ -1055,12 +1066,12 @@ if (confirmPrintBtn) {
         var headers = [];
         var keys = [];
         checked.forEach(function(cb) { headers.push(cb.dataset.header); keys.push(cb.dataset.key); });
-        var html = '<table style="width:100%;border-collapse:collapse;text-align:right;"><thead><tr>';
+        var html = '<table style="width:100%;border-collapse:collapse;text-align:right;"><thead><tr><th style="border:1px solid #333;padding:8px;background:#f0f0f0;">العدد</th>';
         headers.forEach(function(h) { html += '<th style="border:1px solid #333;padding:8px;background:#f0f0f0;">' + h + '</th>'; });
         html += '</tr></thead><tbody>';
-        currentSearchResults.forEach(function(item) {
-            html += '<tr>';
-            keys.forEach(function(k) { html += '<td style="border:1px solid #333;padding:8px;">' + (item[k] || '') + '</td>'; });
+        currentSearchResults.forEach(function(item, idx) {
+            html += '<tr><td style="border:1px solid #333;padding:8px;">' + (idx + 1) + '</td>';
+            keys.forEach(function(k) { html += '<td style="border:1px solid #333;padding:8px;">' + safeVal(item[k]) + '</td>'; });
             html += '</tr>';
         });
         html += '</tbody></table>';
