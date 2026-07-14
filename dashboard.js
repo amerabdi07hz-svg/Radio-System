@@ -199,7 +199,7 @@ function setupUI() {
     if (document.getElementById('user-display-role')) document.getElementById('user-display-role').textContent = currentUser.role;
     if (document.getElementById('user-display-empid')) document.getElementById('user-display-empid').textContent = currentUser.empId;
 
-    isAdmin = currentUser.role === '\u0645\u0633\u0626\u0648\u0644 \u0627\u0644\u0645\u0646\u0638\u0648\u0645\u0629' || currentUser.empId === '34285';
+    isAdmin = currentUser.role === '\u0645\u0633\u0626\u0648\u0644 \u0627\u0644\u0645\u0646\u0638\u0648\u0645\u0629';
     isReadOnly = currentUser.permission === 'readonly';
 
     if (isAdmin) {

@@ -380,14 +380,14 @@
             <form id="handover-form">
                 <input type="hidden" id="handover-store-index">
                 <div class="form-grid">
-                    <div class="form-group"><label>ID</label><input type="text" id="handover-id" required></div>
-                    <div class="form-group"><label>مكان العمل</label><input type="text" id="handover-location" required></div>
-                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="handover-date" required></div>
-                    <div class="form-group"><label>المستلم</label><input type="text" id="handover-receiverName" required></div>
-                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="handover-empId" required></div>
-                    <div class="form-group"><label>الصفة</label><input type="text" id="handover-jobTitle" required></div>
-                    <div class="form-group"><label>الإدارة</label><input type="text" id="handover-department" required></div>
-                    <div class="form-group"><label>الهاتف</label><input type="text" id="handover-phone" required></div>
+                    <div class="form-group"><label>ID</label><input type="text" id="handover-id"></div>
+                    <div class="form-group"><label>مكان العمل</label><input type="text" id="handover-location"></div>
+                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="handover-date"></div>
+                    <div class="form-group"><label>المستلم</label><input type="text" id="handover-receiverName"></div>
+                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="handover-empId"></div>
+                    <div class="form-group"><label>الصفة</label><input type="text" id="handover-jobTitle"></div>
+                    <div class="form-group"><label>الإدارة</label><input type="text" id="handover-department"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="text" id="handover-phone"></div>
                     <div class="form-group"><label>رقم اللوحة</label><input type="text" id="handover-plateNum"></div>
                     <div class="form-group full-width"><label>ملاحظات</label><textarea id="handover-notes" rows="3"></textarea></div>
                 </div>
@@ -403,22 +403,22 @@
             <h3>📱 إضافة جهاز جديد</h3>
             <form id="add-device-form">
                 <div class="form-grid">
-                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="modal-serial" required></div>
-                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="modal-deviceName" required></div>
-                    <div class="form-group"><label>النوع</label><select id="modal-deviceType" required>
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="modal-serial"></div>
+                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="modal-deviceName"></div>
+                    <div class="form-group"><label>النوع</label><select id="modal-deviceType">
                         <option value="" disabled selected>اختر</option>
                         <option value="ثابت">ثابت</option><option value="يدوي">يدوي</option>
                         <option value="ثابت (نوعية)">ثابت (نوعية)</option><option value="يدوي (نوعية)">يدوي (نوعية)</option>
                         <option value="متحرك">متحرك</option><option value="ثابت بحري">ثابت بحري</option><option value="يدوي بحري">يدوي بحري</option>
                     </select></div>
-                    <div class="form-group"><label>ID</label><input type="text" id="modal-id" required></div>
-                    <div class="form-group"><label>مكان العمل</label><input type="text" id="modal-location" required></div>
-                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="modal-date" required></div>
-                    <div class="form-group"><label>المستلم</label><input type="text" id="modal-receiverName" required></div>
-                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="modal-empId" required></div>
-                    <div class="form-group"><label>الصفة</label><input type="text" id="modal-jobTitle" required></div>
-                    <div class="form-group"><label>الإدارة</label><input type="text" id="modal-department" required></div>
-                    <div class="form-group"><label>الهاتف</label><input type="text" id="modal-phone" required></div>
+                    <div class="form-group"><label>ID</label><input type="text" id="modal-id"></div>
+                    <div class="form-group"><label>مكان العمل</label><input type="text" id="modal-location"></div>
+                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="modal-date"></div>
+                    <div class="form-group"><label>المستلم</label><input type="text" id="modal-receiverName"></div>
+                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="modal-empId"></div>
+                    <div class="form-group"><label>الصفة</label><input type="text" id="modal-jobTitle"></div>
+                    <div class="form-group"><label>الإدارة</label><input type="text" id="modal-department"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="text" id="modal-phone"></div>
                     <div class="form-group"><label>رقم اللوحة</label><input type="text" id="modal-plateNum"></div>
                     <div class="form-group full-width"><label>ملاحظات</label><textarea id="modal-notes" rows="3"></textarea></div>
                 </div>
@@ -435,21 +435,21 @@
             <form id="edit-device-form">
                 <input type="hidden" id="edit-device-index">
                 <div class="form-grid">
-                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="edit-modal-serial" required></div>
-                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="edit-modal-deviceName" required></div>
-                    <div class="form-group"><label>النوع</label><select id="edit-modal-deviceType" required>
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="edit-modal-serial"></div>
+                    <div class="form-group"><label>اسم الجهاز</label><input type="text" id="edit-modal-deviceName"></div>
+                    <div class="form-group"><label>النوع</label><select id="edit-modal-deviceType">
                         <option value="ثابت">ثابت</option><option value="يدوي">يدوي</option>
                         <option value="ثابت (نوعية)">ثابت (نوعية)</option><option value="يدوي (نوعية)">يدوي (نوعية)</option>
                         <option value="متحرك">متحرك</option><option value="ثابت بحري">ثابت بحري</option><option value="يدوي بحري">يدوي بحري</option>
                     </select></div>
-                    <div class="form-group"><label>ID</label><input type="text" id="edit-modal-id" required></div>
-                    <div class="form-group"><label>مكان العمل</label><input type="text" id="edit-modal-location" required></div>
-                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="edit-modal-date" required></div>
-                    <div class="form-group"><label>المستلم</label><input type="text" id="edit-modal-receiverName" required></div>
-                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="edit-modal-empId" required></div>
-                    <div class="form-group"><label>الصفة</label><input type="text" id="edit-modal-jobTitle" required></div>
-                    <div class="form-group"><label>الإدارة</label><input type="text" id="edit-modal-department" required></div>
-                    <div class="form-group"><label>الهاتف</label><input type="text" id="edit-modal-phone" required></div>
+                    <div class="form-group"><label>ID</label><input type="text" id="edit-modal-id"></div>
+                    <div class="form-group"><label>مكان العمل</label><input type="text" id="edit-modal-location"></div>
+                    <div class="form-group"><label>تاريخ التسليم</label><input type="date" id="edit-modal-date"></div>
+                    <div class="form-group"><label>المستلم</label><input type="text" id="edit-modal-receiverName"></div>
+                    <div class="form-group"><label>رقم التوظيف</label><input type="text" id="edit-modal-empId"></div>
+                    <div class="form-group"><label>الصفة</label><input type="text" id="edit-modal-jobTitle"></div>
+                    <div class="form-group"><label>الإدارة</label><input type="text" id="edit-modal-department"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="text" id="edit-modal-phone"></div>
                     <div class="form-group"><label>رقم اللوحة</label><input type="text" id="edit-modal-plateNum"></div>
                     <div class="form-group full-width"><label>ملاحظات</label><textarea id="edit-modal-notes" rows="3"></textarea></div>
                 </div>
