@@ -39,7 +39,7 @@
                 <span class="tab-icon">🛒</span>
                 <span class="tab-label">المشتريات</span>
             </button>
-            <button id="tab-archive" class="tab-btn" style="display:none;">
+            <button id="tab-archive" class="tab-btn">
                 <span class="tab-icon">🗂️</span>
                 <span class="tab-label">الأرشيف</span>
             </button>
@@ -124,14 +124,7 @@
                 </div>
                 <div class="table-responsive">
                     <table id="devices-table">
-                        <thead>
-                            <tr>
-                                <th>#</th><th>رقم التسلسل</th><th>اسم الجهاز</th><th>النوع</th><th>ID</th>
-                                <th>مكان العمل</th><th>تاريخ التسليم</th><th>المستلم</th><th>رقم التوظيف</th>
-                                <th>الصفة</th><th>الإدارة</th><th>الهاتف</th><th>اللوحة</th><th>ملاحظات</th>
-                                <th>حالة الإدخال</th><th>الإجراءات</th>
-                            </tr>
-                        </thead>
+                        <thead id="devices-thead"></thead>
                         <tbody id="table-body"></tbody>
                     </table>
                 </div>

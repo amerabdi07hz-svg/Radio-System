@@ -497,6 +497,28 @@ table th {
     letter-spacing: 0.3px;
 }
 
+th.draggable-col {
+    cursor: grab;
+    user-select: none;
+    position: relative;
+    transition: background 0.15s ease;
+}
+th.draggable-col::after {
+    content: '⋮';
+    margin-right: 4px;
+    opacity: 0.4;
+    font-size: 12px;
+}
+th.draggable-col:hover { background: linear-gradient(135deg, #475569, #64748b); }
+th.draggable-col.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+th.draggable-col.drag-over {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    box-shadow: inset 0 0 0 2px #93c5fd;
+}
+
 table tbody tr { transition: background 0.2s ease; }
 table tbody tr:hover { background: #f8fafc; }
 table tbody tr:nth-child(even) { background: #fafbfc; }

@@ -30,6 +30,129 @@ let usersData = [];
 let currentSearchResults = [];
 let currentSearchType = '';
 
+var deviceColumns = [
+    { key: 'serial', label: 'رقم التسلسل', rightClick: true },
+    { key: 'deviceName', label: 'اسم الجهاز', rightClick: true },
+    { key: 'deviceType', label: 'النوع' },
+    { key: 'id', label: 'ID' },
+    { key: 'location', label: 'مكان العمل' },
+    { key: 'date', label: 'تاريخ التسليم' },
+    { key: 'receiverName', label: 'المستلم', rightClick: true },
+    { key: 'empId', label: 'رقم التوظيف' },
+    { key: 'jobTitle', label: 'الصفة' },
+    { key: 'department', label: 'الإدارة' },
+    { key: 'phone', label: 'الهاتف' },
+    { key: 'plateNum', label: 'اللوحة' },
+    { key: 'notes', label: 'ملاحظات' },
+    { key: 'audit', label: 'حالة الإدخال' },
+    { key: 'actions', label: 'الإجراءات' }
+];
+
+function getDevicesColumnOrder() {
+    try {
+        var saved = JSON.parse(localStorage.getItem('devicesColumnOrder'));
+        var defaultKeys = deviceColumns.map(function(c) { return c.key; });
+        if (Array.isArray(saved) && saved.length === defaultKeys.length && saved.every(function(k) { return defaultKeys.indexOf(k) !== -1; })) return saved;
+    } catch(e) {}
+    return deviceColumns.map(function(c) { return c.key; });
+}
+
+function saveDevicesColumnOrder(order) {
+    localStorage.setItem('devicesColumnOrder', JSON.stringify(order));
+}
+
+function renderDeviceCell(key, item, index) {
+    var rc = ' class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')"';
+    switch(key) {
+        case 'serial': return '<td' + rc + '>' + safeVal(item.serial) + '</td>';
+        case 'deviceName': return '<td' + rc + '>' + safeVal(item.deviceName) + '</td>';
+        case 'deviceType': return '<td>' + safeVal(item.deviceType) + '</td>';
+        case 'id': return '<td>' + safeVal(item.id) + '</td>';
+        case 'location': return '<td>' + safeVal(item.location) + '</td>';
+        case 'date': return '<td>' + safeVal(item.date) + '</td>';
+        case 'receiverName': return '<td' + rc + '>' + safeVal(item.receiverName) + '</td>';
+        case 'empId': return '<td>' + safeVal(item.empId) + '</td>';
+        case 'jobTitle': return '<td>' + safeVal(item.jobTitle) + '</td>';
+        case 'department': return '<td>' + safeVal(item.department) + '</td>';
+        case 'phone': return '<td>' + safeVal(item.phone) + '</td>';
+        case 'plateNum': return '<td>' + safeVal(item.plateNum) + '</td>';
+        case 'notes': return '<td>' + safeVal(item.notes) + '</td>';
+        case 'audit':
+            var auditStr = '<span style="color:#7f8c8d;font-size:12px;font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + escapeHtml(item.addedBy) + '</span>' + getAuditNote(item);
+            return '<td>' + auditStr + '</td>';
+        case 'actions':
+            var acts = isReadOnly ? '<span style="color:#7f8c8d;font-size:12px;">\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637</span>' : '<button class="action-icon-btn" onclick="openEditDevice(' + index + ')">\u270F\uFE0F</button><button class="action-icon-btn" onclick="deleteDevice(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
+            return '<td>' + acts + '</td>';
+        default: return '<td></td>';
+    }
+}
+
+function buildDevicesThead() {
+    var thead = document.getElementById('devices-thead');
+    if (!thead) return;
+    var order = getDevicesColumnOrder();
+    var tr = document.createElement('tr');
+    var thNum = document.createElement('th');
+    thNum.textContent = '#';
+    tr.appendChild(thNum);
+    order.forEach(function(key) {
+        var col = deviceColumns.find(function(c) { return c.key === key; });
+        if (!col) return;
+        var th = document.createElement('th');
+        th.textContent = col.label;
+        th.setAttribute('draggable', 'true');
+        th.setAttribute('data-col', key);
+        th.classList.add('draggable-col');
+        tr.appendChild(th);
+    });
+    thead.innerHTML = '';
+    thead.appendChild(tr);
+}
+
+function initDevicesDragDrop() {
+    var thead = document.getElementById('devices-thead');
+    if (!thead) return;
+    var dragCol = null;
+    thead.addEventListener('dragstart', function(e) {
+        var th = e.target.closest('th[data-col]');
+        if (!th) { e.preventDefault(); return; }
+        dragCol = th.getAttribute('data-col');
+        th.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', dragCol);
+    });
+    thead.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        thead.querySelectorAll('th[data-col]').forEach(function(th) { th.classList.remove('drag-over'); });
+        var th = e.target.closest('th[data-col]');
+        if (th && th.getAttribute('data-col') !== dragCol) th.classList.add('drag-over');
+    });
+    thead.addEventListener('dragleave', function(e) {
+        var th = e.target.closest('th[data-col]');
+        if (th) th.classList.remove('drag-over');
+    });
+    thead.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var targetTh = e.target.closest('th[data-col]');
+        if (!targetTh || !dragCol) return;
+        var targetCol = targetTh.getAttribute('data-col');
+        if (targetCol === dragCol) return;
+        var order = getDevicesColumnOrder();
+        var fromIdx = order.indexOf(dragCol);
+        var toIdx = order.indexOf(targetCol);
+        order.splice(fromIdx, 1);
+        order.splice(toIdx, 0, dragCol);
+        saveDevicesColumnOrder(order);
+        buildDevicesThead();
+        loadDevicesTable();
+    });
+    thead.addEventListener('dragend', function() {
+        dragCol = null;
+        thead.querySelectorAll('th').forEach(function(th) { th.classList.remove('dragging', 'drag-over'); });
+    });
+}
+
 window.cleanText = function(text) {
     if (!text) return '';
     return String(text).trim().replace(/\s+/g, ' ');
@@ -199,19 +322,21 @@ function setupUI() {
     if (document.getElementById('user-display-role')) document.getElementById('user-display-role').textContent = currentUser.role;
     if (document.getElementById('user-display-empid')) document.getElementById('user-display-empid').textContent = currentUser.empId;
 
-    isAdmin = currentUser.role === '\u0645\u0633\u0626\u0648\u0644 \u0627\u0644\u0645\u0646\u0638\u0648\u0645\u0629';
-    isReadOnly = currentUser.permission === 'readonly';
+    isAdmin = (currentUser.role || '').trim() === 'مسؤول المنظومة';
+    isReadOnly = (currentUser.permission || '').trim() === 'readonly';
 
+    if (document.getElementById('tab-archive')) document.getElementById('tab-archive').style.display = 'block';
     if (isAdmin) {
         if (document.getElementById('admin-add-user-card')) document.getElementById('admin-add-user-card').style.display = 'block';
         if (document.getElementById('admin-users-list-card')) document.getElementById('admin-users-list-card').style.display = 'block';
-        if (document.getElementById('tab-archive')) document.getElementById('tab-archive').style.display = 'block';
         if (document.getElementById('admin-backup-card')) document.getElementById('admin-backup-card').style.display = 'block';
     }
     if (isReadOnly) {
         var hideBtns = ['add-device-btn', 'return-device-btn', 'upload-excel-btn', 'clear-data-btn', 'add-store-btn', 'add-purchase-btn', 'clear-archive-btn'];
         hideBtns.forEach(function(id) { if (document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
     }
+    buildDevicesThead();
+    initDevicesDragDrop();
 }
 
 var idleTimeout = 2 * 60 * 1000;
@@ -290,11 +415,12 @@ function safeVal(v) { return (!v || v === 'undefined' || v === 'null') ? '' : es
 window.loadDevicesTable = function() {
     var tableBody = document.getElementById('table-body');
     if (!tableBody) return;
+    var order = getDevicesColumnOrder();
     tableBody.innerHTML = "";
     devicesData.forEach(function(item, index) {
-        var auditStr = '<span style="color: #7f8c8d; font-size: 12px; font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + escapeHtml(item.addedBy) + '</span>' + getAuditNote(item);
-        var actions = isReadOnly ? '<span style="color:#7f8c8d;font-size:12px;">\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637</span>' : '<button class="action-icon-btn" onclick="openEditDevice(' + index + ')">\u270F\uFE0F</button><button class="action-icon-btn" onclick="deleteDevice(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
-        tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')">' + safeVal(item.serial) + '</td><td class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')">' + safeVal(item.deviceName) + '</td><td>' + safeVal(item.deviceType) + '</td><td>' + safeVal(item.id) + '</td><td>' + safeVal(item.location) + '</td><td>' + safeVal(item.date) + '</td><td class="right-click-cell" oncontextmenu="returnRightClick(event, ' + index + ')">' + safeVal(item.receiverName) + '</td><td>' + safeVal(item.empId) + '</td><td>' + safeVal(item.jobTitle) + '</td><td>' + safeVal(item.department) + '</td><td>' + safeVal(item.phone) + '</td><td>' + safeVal(item.plateNum) + '</td><td>' + safeVal(item.notes) + '</td><td>' + auditStr + '</td><td>' + actions + '</td></tr>';
+        var row = '<td>' + (index + 1) + '</td>';
+        order.forEach(function(key) { row += renderDeviceCell(key, item, index); });
+        tableBody.innerHTML += '<tr>' + row + '</tr>';
     });
 };
 
@@ -374,21 +500,11 @@ function renderSearchResults() {
     }
     var html = '';
     if (currentSearchType === 'devices') {
-        var deviceHeaders = [
-            { key: 'serial', label: 'رقم التسلسل' },
-            { key: 'deviceName', label: 'اسم الجهاز' },
-            { key: 'deviceType', label: 'النوع' },
-            { key: 'id', label: 'ID' },
-            { key: 'location', label: 'مكان العمل' },
-            { key: 'date', label: 'تاريخ التسليم' },
-            { key: 'receiverName', label: 'المستلم' },
-            { key: 'empId', label: 'رقم التوظيف' },
-            { key: 'jobTitle', label: 'الصفة' },
-            { key: 'department', label: 'الإدارة' },
-            { key: 'phone', label: 'الهاتف' },
-            { key: 'plateNum', label: 'اللوحة' },
-            { key: 'notes', label: 'الملاحظات' }
-        ];
+        var searchOrder = getDevicesColumnOrder();
+        var deviceHeaders = searchOrder.map(function(key) {
+            var col = deviceColumns.find(function(c) { return c.key === key; });
+            return col ? { key: col.key, label: col.label } : null;
+        }).filter(Boolean);
         html = '<table class="search-devices-table" style="width:100%;text-align:right;"><thead><tr><th>العدد</th>';
         deviceHeaders.forEach(function(h) { html += '<th>' + h.label + '</th>'; });
         if (!isReadOnly) html += '<th>إجراء</th>';
@@ -488,21 +604,10 @@ window.openSearchPrintSettings = function() {
     var container = document.getElementById('print-columns-container');
     if (!container) { return; }
     var allColumns = {
-        devices: [
-            { key: 'serial', label: 'رقم التسلسل' },
-            { key: 'deviceName', label: 'اسم الجهاز' },
-            { key: 'deviceType', label: 'النوع' },
-            { key: 'id', label: 'ID' },
-            { key: 'location', label: 'مكان العمل' },
-            { key: 'date', label: 'تاريخ التسليم' },
-            { key: 'receiverName', label: 'المستلم' },
-            { key: 'empId', label: 'رقم التوظيف' },
-            { key: 'jobTitle', label: 'الصفة' },
-            { key: 'department', label: 'الإدارة' },
-            { key: 'phone', label: 'الهاتف' },
-            { key: 'plateNum', label: 'اللوحة' },
-            { key: 'notes', label: 'الملاحظات' }
-        ],
+        devices: getDevicesColumnOrder().filter(function(k) { return k !== 'audit' && k !== 'actions'; }).map(function(key) {
+            var col = deviceColumns.find(function(c) { return c.key === key; });
+            return col ? { key: col.key, label: col.label } : null;
+        }).filter(Boolean),
         store: [
             { key: 'serial', label: 'رقم التسلسل' },
             { key: 'deviceName', label: 'اسم الجهاز' },
