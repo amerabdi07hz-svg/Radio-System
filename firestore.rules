@@ -31,9 +31,9 @@ service cloud.firestore {
     // لكن الإنشاء/التعديل/الحذف للمدير فقط. لا يمكن لأي مستخدم تعديل صلاحياته بنفسه.
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isAdmin();
+      allow create: if isAdmin() || (isSignedIn() && userId == request.auth.uid && !exists(/databases/$(database)/documents/users/$(userId)));
       allow update: if isAdmin();
-      allow delete: if isAdmin() && userId != request.auth.uid; // لا يحذف نفسه
+      allow delete: if isAdmin() && userId != request.auth.uid;
     }
 
     // الأجهزة، المخزن، المشتريات: قراءة لأي مستخدم مسجّل دخول،

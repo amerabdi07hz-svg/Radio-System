@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, setPersistence, browserSessionPersistence, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserSessionPersistence, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, setDoc, getDoc, getDocs, writeBatch, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -27,6 +27,7 @@ let storeData = [];
 let purchasesData = [];
 let archiveData = [];
 let usersData = [];
+let stationsData = [];
 let currentSearchResults = [];
 let currentSearchType = '';
 
@@ -310,7 +311,21 @@ onAuthStateChanged(auth, async function(user) {
             setupUI();
             setupRealtimeListeners();
         } else {
-            signOut(auth);
+            var empIdFromEmail = (user.email || '').split('@')[0];
+            try {
+                await setDoc(doc(db, "users", user.uid), {
+                    name: 'مستخدم ' + empIdFromEmail,
+                    empId: empIdFromEmail,
+                    role: '',
+                    permission: 'full'
+                });
+            } catch(e) {
+                console.warn('setDoc failed:', e);
+            }
+            currentUser = { uid: user.uid, name: 'مستخدم ' + empIdFromEmail, empId: empIdFromEmail, role: '', permission: 'full' };
+            setupUI();
+            setupRealtimeListeners();
+            showToast('تم الدخول - يرجى تعديل بياناتك من المدير', 'info');
         }
     } else {
         window.location.href = "index.html";
@@ -358,10 +373,12 @@ function updateStats() {
     var devEl = document.getElementById('stat-devices');
     var storeEl = document.getElementById('stat-store');
     var purEl = document.getElementById('stat-purchases');
+    var stnEl = document.getElementById('stat-stations');
     var usrEl = document.getElementById('stat-users');
     if (devEl) devEl.textContent = devicesData.length;
     if (storeEl) storeEl.textContent = storeData.length;
     if (purEl) purEl.textContent = purchasesData.length;
+    if (stnEl) stnEl.textContent = stationsData.length;
     if (usrEl) usrEl.textContent = usersData.length;
 }
 
@@ -388,6 +405,11 @@ function setupRealtimeListeners() {
     onSnapshot(collection(db, "users"), function(snapshot) {
         usersData = snapshot.docs.map(function(d) { return { firebaseId: d.id, ...d.data() }; });
         renderUsersTable();
+        updateStats();
+    });
+    onSnapshot(collection(db, "stations"), function(snapshot) {
+        stationsData = snapshot.docs.map(function(d) { return { firebaseId: d.id, ...d.data() }; }).sort(function(a, b) { return (a.createdAt || 0) - (b.createdAt || 0); });
+        loadStationsTable();
         updateStats();
     });
 }
@@ -446,6 +468,17 @@ window.loadPurchasesTable = function() {
     });
 };
 
+window.loadStationsTable = function() {
+    var tableBody = document.getElementById('stations-table-body');
+    if (!tableBody) return;
+    tableBody.innerHTML = "";
+    stationsData.forEach(function(item, index) {
+        var auditStr = '<span style="color:#7f8c8d;font-size:12px;font-weight:bold;">\u0625\u0636\u0627\u0641\u0629: ' + escapeHtml(item.addedBy) + '</span>' + getAuditNote(item);
+        var actions = isReadOnly ? '<span style="color:#7f8c8d;font-size:12px;">\u0642\u0631\u0627\u0621\u0629 \u0641\u0642\u0637</span>' : '<button class="action-icon-btn" onclick="openEditStation(' + index + ')">\u270F\uFE0F</button><button class="action-icon-btn" onclick="deleteStation(' + index + ')">\uD83D\uDDD1\uFE0F</button>';
+        tableBody.innerHTML += '<tr><td>' + (index + 1) + '</td><td>' + safeVal(item.location) + '</td><td>' + safeVal(item.serial) + '</td><td>' + safeVal(item.tx) + '</td><td>' + safeVal(item.rx) + '</td><td>' + actions + '</td></tr>';
+    });
+};
+
 window.loadArchiveTable = function() {
     var tableBody = document.getElementById('archive-table-body');
     if (!tableBody) return;
@@ -469,20 +502,23 @@ window.renderUsersTable = function() {
 };
 
 window.executeSearch = function(section) {
-    var inputId = section === 'devices' ? 'devices-search-input' : section === 'store' ? 'store-search-input' : 'purchases-search-input';
+    var inputMap = { devices: 'devices-search-input', store: 'store-search-input', purchases: 'purchases-search-input', stations: 'stations-search-input' };
+    var inputId = inputMap[section];
     var queryStr = document.getElementById(inputId).value;
     if (!queryStr.trim()) { alert('\u0627\u0644\u0631\u062c\u0627\u0621 \u0643\u062a\u0627\u0628\u0629 \u0643\u0644\u0645\u0629 \u0644\u0644\u0628\u062d\u062b.'); return; }
     var cleanQuery = cleanArabic(queryStr);
     var terms = cleanQuery.split(/\s+\u0648\s+|\s+/).filter(function(t) { return t.trim() !== ''; });
     currentSearchType = section;
     currentSearchResults = [];
-    var dataSource = section === 'devices' ? devicesData : section === 'store' ? storeData : purchasesData;
+    var dataMap = { devices: devicesData, store: storeData, purchases: purchasesData, stations: stationsData };
+    var dataSource = dataMap[section];
     dataSource.forEach(function(item) {
         var isMatch = terms.some(function(term) {
             var q = term.toLowerCase();
             if (section === 'devices') return (cleanArabic(item.serial || "").toLowerCase().includes(q) || cleanArabic(item.deviceName || "").toLowerCase().includes(q) || cleanArabic(item.deviceType || "").toLowerCase().includes(q) || cleanArabic(item.location || "").toLowerCase().includes(q) || cleanArabic(item.receiverName || "").toLowerCase() === q || cleanArabic(item.receiverName || "").toLowerCase().startsWith(q) || String(item.empId || "").toLowerCase() === q || String(item.empId || "").toLowerCase().startsWith(q) || cleanArabic(item.notes || "").toLowerCase().includes(q));
             else if (section === 'store') return (cleanArabic(item.serial || "").toLowerCase().includes(q) || cleanArabic(item.deviceName || "").toLowerCase().includes(q) || cleanArabic(item.deviceType || "").toLowerCase().includes(q) || cleanArabic(item.notes || "").toLowerCase().includes(q));
-            else return ((item.orderNum || "").toLowerCase().includes(q) || cleanArabic(item.method || "").toLowerCase().includes(q) || cleanArabic(item.deviceType || "").toLowerCase().includes(q) || cleanArabic(item.notes || "").toLowerCase().includes(q));
+            else if (section === 'purchases') return ((item.orderNum || "").toLowerCase().includes(q) || cleanArabic(item.method || "").toLowerCase().includes(q) || cleanArabic(item.deviceType || "").toLowerCase().includes(q) || cleanArabic(item.notes || "").toLowerCase().includes(q));
+            else return (cleanArabic(item.location || "").toLowerCase().includes(q) || cleanArabic(item.serial || "").toLowerCase().includes(q) || cleanArabic(item.tx || "").toLowerCase().includes(q) || cleanArabic(item.rx || "").toLowerCase().includes(q));
         });
         if (isMatch) currentSearchResults.push(item);
     });
@@ -541,7 +577,7 @@ function renderSearchResults() {
             storeHeaders.forEach(function(h) { html += '<td>' + safeVal(item[h.key]) + '</td>'; });
             html += '</tr>';
         });
-    } else {
+    } else if (currentSearchType === 'purchases') {
         var purchaseHeaders = [
             { key: 'orderNum', label: 'رقم الطلبية' },
             { key: 'method', label: 'طريقة الشراء' },
@@ -554,6 +590,21 @@ function renderSearchResults() {
         currentSearchResults.forEach(function(item, idx) {
             html += '<tr><td>' + (idx + 1) + '</td>';
             purchaseHeaders.forEach(function(h) { html += '<td>' + safeVal(item[h.key]) + '</td>'; });
+            html += '</tr>';
+        });
+    } else {
+        var stationHeaders = [
+            { key: 'location', label: 'مكان المحطة' },
+            { key: 'serial', label: 'رقم التسلسل' },
+            { key: 'tx', label: 'TX' },
+            { key: 'rx', label: 'RX' }
+        ];
+        html = '<table style="width:100%;text-align:right;"><thead><tr><th>العدد</th>';
+        stationHeaders.forEach(function(h) { html += '<th>' + h.label + '</th>'; });
+        html += '</tr></thead><tbody>';
+        currentSearchResults.forEach(function(item, idx) {
+            html += '<tr><td>' + (idx + 1) + '</td>';
+            stationHeaders.forEach(function(h) { html += '<td>' + safeVal(item[h.key]) + '</td>'; });
             html += '</tr>';
         });
     }
@@ -620,6 +671,12 @@ window.openSearchPrintSettings = function() {
             { key: 'method', label: 'طريقة الشراء' },
             { key: 'deviceType', label: 'نوع الجهاز' },
             { key: 'notes', label: 'الملاحظات' }
+        ],
+        stations: [
+            { key: 'location', label: 'مكان المحطة' },
+            { key: 'serial', label: 'رقم التسلسل' },
+            { key: 'tx', label: 'TX' },
+            { key: 'rx', label: 'RX' }
         ]
     };
     var cols = allColumns[currentSearchType] || allColumns.devices;
@@ -737,6 +794,30 @@ window.openEditPurchase = function(index) {
     document.getElementById('edit-purchase-modal').style.display = 'flex';
 };
 
+window.openEditStation = function(index) {
+    var d = stationsData[index];
+    document.getElementById('edit-station-index').value = index;
+    document.getElementById('edit-station-modal-location').value = d.location || '';
+    document.getElementById('edit-station-modal-serial').value = d.serial || '';
+    document.getElementById('edit-station-modal-tx').value = d.tx || '';
+    document.getElementById('edit-station-modal-rx').value = d.rx || '';
+    document.getElementById('edit-station-modal').style.display = 'flex';
+};
+
+window.deleteStation = async function(index) {
+    if (isReadOnly) return;
+    if (!confirm('\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u062d\u0630\u0641 \u0647\u0630\u0647 \u0627\u0644\u0645\u062d\u0637\u0629\u061f')) return;
+    showLoading();
+    var item = stationsData[index];
+    var itemCopy = Object.assign({}, item);
+    try {
+        await addDoc(collection(db, "archive"), { source: '\u0645\u062d\u0637\u0627\u062a \u0627\u0644\u0631\u0627\u062f\u064a\u0648', data: itemCopy, deletedAt: new Date().toLocaleString('ar-EG'), deletedBy: currentUser.name, createdAt: Date.now() });
+    } catch(e) {}
+    await deleteDoc(doc(db, "stations", item.firebaseId));
+    hideLoading();
+    showToast('\u062a\u0645 \u062d\u0630\u0641 \u0627\u0644\u0645\u062d\u0637\u0629');
+};
+
 if (!isReadOnly) {
     window.returnRightClick = async function(e, index) {
         e.preventDefault();
@@ -836,6 +917,29 @@ if (document.getElementById('edit-purchase-form')) {
     });
 }
 
+if (document.getElementById('add-station-form')) {
+    document.getElementById('add-station-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        showLoading();
+        await addDoc(collection(db, "stations"), { location: cleanText(document.getElementById('station-modal-location').value), serial: cleanText(document.getElementById('station-modal-serial').value), tx: cleanText(document.getElementById('station-modal-tx').value), rx: cleanText(document.getElementById('station-modal-rx').value), addedBy: currentUser.name, createdAt: Date.now() });
+        this.reset();
+        document.getElementById('station-modal').style.display = 'none';
+        hideLoading();
+        showToast('\u062a\u0645\u062a \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0645\u062d\u0637\u0629 \u0628\u0646\u062c\u0627\u062d');
+    });
+}
+if (document.getElementById('edit-station-form')) {
+    document.getElementById('edit-station-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        showLoading();
+        var item = stationsData[document.getElementById('edit-station-index').value];
+        await updateDoc(doc(db, "stations", item.firebaseId), { location: cleanText(document.getElementById('edit-station-modal-location').value), serial: cleanText(document.getElementById('edit-station-modal-serial').value), tx: cleanText(document.getElementById('edit-station-modal-tx').value), rx: cleanText(document.getElementById('edit-station-modal-rx').value), lastModifiedBy: currentUser.name, lastModifiedAt: new Date().toLocaleString('ar-EG') });
+        document.getElementById('edit-station-modal').style.display = 'none';
+        hideLoading();
+        showToast('\u062a\u0645 \u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0645\u062d\u0637\u0629 \u0628\u0646\u062c\u0627\u062d');
+    });
+}
+
 if (document.getElementById('handover-form')) {
     document.getElementById('handover-form').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -852,12 +956,13 @@ if (document.getElementById('handover-form')) {
 var tabDevices = document.getElementById('tab-devices');
 var tabStore = document.getElementById('tab-store');
 var tabPurchases = document.getElementById('tab-purchases');
+var tabStations = document.getElementById('tab-stations');
 var tabArchive = document.getElementById('tab-archive');
 var tabProfile = document.getElementById('tab-profile');
-var sections = { devices: document.getElementById('devices-section'), store: document.getElementById('store-section'), purchases: document.getElementById('purchases-section'), archive: document.getElementById('archive-section'), profile: document.getElementById('profile-section') };
+var sections = { devices: document.getElementById('devices-section'), store: document.getElementById('store-section'), purchases: document.getElementById('purchases-section'), stations: document.getElementById('stations-section'), archive: document.getElementById('archive-section'), profile: document.getElementById('profile-section') };
 
 function switchTab(activeTab, activeSection) {
-    [tabDevices, tabStore, tabPurchases, tabArchive, tabProfile].forEach(function(t) { if (t) t.classList.remove('active'); });
+    [tabDevices, tabStore, tabPurchases, tabStations, tabArchive, tabProfile].forEach(function(t) { if (t) t.classList.remove('active'); });
     Object.values(sections).forEach(function(s) { if (s) s.classList.remove('active'); });
     activeTab.classList.add('active');
     activeSection.classList.add('active');
@@ -865,20 +970,23 @@ function switchTab(activeTab, activeSection) {
 if (tabDevices) tabDevices.addEventListener('click', function() { switchTab(tabDevices, sections.devices); });
 if (tabStore) tabStore.addEventListener('click', function() { switchTab(tabStore, sections.store); });
 if (tabPurchases) tabPurchases.addEventListener('click', function() { switchTab(tabPurchases, sections.purchases); });
+if (tabStations) tabStations.addEventListener('click', function() { switchTab(tabStations, sections.stations); });
 if (tabArchive) tabArchive.addEventListener('click', function() { switchTab(tabArchive, sections.archive); });
 if (tabProfile) tabProfile.addEventListener('click', function() { switchTab(tabProfile, sections.profile); });
 
 var deviceModal = document.getElementById('device-modal');
 var storeModal = document.getElementById('store-modal');
 var purchaseModal = document.getElementById('purchase-modal');
+var stationModal = document.getElementById('station-modal');
 
 if (!isReadOnly) {
     if (document.getElementById('add-device-btn')) document.getElementById('add-device-btn').addEventListener('click', function() { deviceModal.style.display = 'flex'; });
     if (document.getElementById('add-store-btn')) document.getElementById('add-store-btn').addEventListener('click', function() { storeModal.style.display = 'flex'; });
     if (document.getElementById('add-purchase-btn')) document.getElementById('add-purchase-btn').addEventListener('click', function() { purchaseModal.style.display = 'flex'; });
+    if (document.getElementById('add-station-btn')) document.getElementById('add-station-btn').addEventListener('click', function() { stationModal.style.display = 'flex'; });
 }
 
-var closeBtns = ['close-device-modal', 'close-store-modal', 'close-purchase-modal', 'close-handover-modal', 'close-edit-device-modal', 'close-edit-store-modal', 'close-edit-purchase-modal', 'close-search-results', 'close-print-settings', 'close-return-modal'];
+var closeBtns = ['close-device-modal', 'close-store-modal', 'close-purchase-modal', 'close-station-modal', 'close-edit-station-modal', 'close-handover-modal', 'close-edit-device-modal', 'close-edit-store-modal', 'close-edit-purchase-modal', 'close-search-results', 'close-print-settings', 'close-return-modal'];
 closeBtns.forEach(function(id) {
     if (document.getElementById(id)) document.getElementById(id).addEventListener('click', function() { this.closest('.modal').style.display = 'none'; });
 });
@@ -1006,14 +1114,27 @@ if (document.getElementById('add-user-form')) {
         showLoading();
         var empId = cleanText(document.getElementById('new-user-empid').value);
         var pass = document.getElementById('new-user-password').value;
+        var form = this;
         try {
             var userCred = await createUserWithEmailAndPassword(secondaryAuth, empId + '@radio.local', pass);
             await setDoc(doc(db, "users", userCred.user.uid), { name: cleanText(document.getElementById('new-user-name').value), empId: empId, role: cleanText(document.getElementById('new-user-role').value), permission: document.getElementById('new-user-permission').value });
             secondaryAuth.signOut();
             showToast('\u062a\u0645 \u0625\u0636\u0627\u0641\u0629 \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645 \u0628\u0646\u062c\u0627\u062d');
-            this.reset();
+            form.reset();
         } catch (err) {
-            showToast('\u062d\u062f\u062b \u062e\u0637\u0623: \u0642\u062f \u064a\u0643\u0648\u0646 \u0631\u0642\u0645 \u0627\u0644\u062a\u0648\u0638\u064a\u0641 \u0645\u0633\u062a\u062e\u062f\u0645 \u0628\u0627\u0644\u0641\u0639\u0644', 'error');
+            if (err.code === 'auth/email-already-in-use') {
+                try {
+                    var loginCred = await signInWithEmailAndPassword(secondaryAuth, empId + '@radio.local', pass);
+                    await setDoc(doc(db, "users", loginCred.user.uid), { name: cleanText(document.getElementById('new-user-name').value), empId: empId, role: cleanText(document.getElementById('new-user-role').value), permission: document.getElementById('new-user-permission').value });
+                    secondaryAuth.signOut();
+                    showToast('\u062a\u0645 \u0625\u0639\u0627\u062f\u0629 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062d\u0633\u0627\u0628 \u0628\u0646\u062c\u0627\u062d');
+                    form.reset();
+                } catch (loginErr) {
+                    showToast('\u0627\u0644\u062d\u0633\u0627\u0628 \u0645\u0648\u062c\u0648\u062f \u0628\u0643\u0644\u0645\u0629 \u0633\u0631 \u0645\u062e\u062a\u0644\u0641\u0629 - \u064a\u0631\u062c\u0649 \u062a\u0639\u064a\u064a\u0646 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u0645\u0646 \u062e\u0627\u0635 \u0627\u0644\u0645\u062f\u064a\u0631', 'error');
+                }
+            } else {
+                showToast('\u062d\u062f\u062b \u062e\u0637\u0623: \u0642\u062f \u064a\u0643\u0648\u0646 \u0631\u0642\u0645 \u0627\u0644\u062a\u0648\u0638\u064a\u0641 \u0645\u0633\u062a\u062e\u062f\u0645 \u0628\u0627\u0644\u0641\u0639\u0644', 'error');
+            }
         }
         hideLoading();
     });
@@ -1141,6 +1262,8 @@ if (adminBackupBtn) {
             if (storeRows.length) XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(storeRows), "\u0627\u0644\u0645\u062e\u0632\u0646 \u0627\u0644\u0639\u0627\u0645");
             var purchaseRows = purchasesData.map(function(p) { return { '\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628\u064a\u0629': p.orderNum, '\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0634\u0631\u0627\u0621': p.method, '\u0646\u0648\u0639 \u0627\u0644\u062c\u0647\u0627\u0632': p.deviceType, '\u0625\u0636\u0627\u0641\u064a 1': p.col1, '\u0625\u0636\u0627\u0641\u064a 2': p.col2, '\u0625\u0636\u0627\u0641\u064a 3': p.col3 }; });
             if (purchaseRows.length) XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(purchaseRows), "\u0627\u0644\u0645\u0634\u062a\u0631\u064a\u0627\u062a");
+            var stationRows = stationsData.map(function(s) { return { '\u0645\u0643\u0627\u0646 \u0627\u0644\u0645\u062d\u0637\u0629': s.location, '\u0631\u0642\u0645 \u0627\u0644\u062a\u0633\u0644\u0633\u0644': s.serial, TX: s.tx, RX: s.rx }; });
+            if (stationRows.length) XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(stationRows), "\u0645\u062d\u0637\u0627\u062a \u0627\u0644\u0631\u0627\u062f\u064a\u0648");
             var archiveRows = archiveData.map(function(a) { return { '\u0627\u0644\u0645\u0635\u062f\u0631': a.source, '\u0627\u0644\u062a\u0641\u0635\u064a\u0644': a.data ? JSON.stringify(a.data) : '', '\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u062d\u0630\u0641': a.deletedAt, '\u0627\u0644\u0645\u0633\u0626\u0648\u0644': a.deletedBy }; });
             if (archiveRows.length) XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(archiveRows), "\u0633\u062c\u0644 \u0627\u0644\u0623\u0631\u0634\u064a\u0641 \u0648\u0627\u0644\u0645\u062d\u0630\u0648\u0641\u0627\u062a");
             XLSX.writeFile(workbook, '\u0627\u0644\u0646\u0633\u062e\u0629_\u0627\u0644\u0627\u062d\u062a\u064a\u0627\u0637\u064a\u0629_' + new Date().toISOString().split('T')[0] + '.xlsx');
@@ -1157,7 +1280,8 @@ var printColsContainer = document.getElementById('print-columns-container');
 var currentPrintColumns = [];
 
 function openMainReport(section) {
-    currentSearchResults = section === 'devices' ? devicesData : section === 'store' ? storeData : purchasesData;
+    var dataMap = { devices: devicesData, store: storeData, purchases: purchasesData, stations: stationsData };
+    currentSearchResults = dataMap[section] || [];
     currentSearchType = section;
     if (currentSearchResults.length === 0) { alert('\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a \u0644\u0637\u0628\u0627\u0639\u062a\u0647\u0627!'); return; }
     openSearchPrintSettings();

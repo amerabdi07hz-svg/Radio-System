@@ -39,6 +39,10 @@
                 <span class="tab-icon">🛒</span>
                 <span class="tab-label">المشتريات</span>
             </button>
+            <button id="tab-stations" class="tab-btn">
+                <span class="tab-icon">📡</span>
+                <span class="tab-label">محطات الراديو</span>
+            </button>
             <button id="tab-archive" class="tab-btn">
                 <span class="tab-icon">🗂️</span>
                 <span class="tab-label">الأرشيف</span>
@@ -74,6 +78,13 @@
             <div class="stat-info">
                 <span class="stat-value" id="stat-purchases">0</span>
                 <span class="stat-label">طلبات الشراء</span>
+            </div>
+        </div>
+        <div class="stat-card stat-orange">
+            <div class="stat-icon">📡</div>
+            <div class="stat-info">
+                <span class="stat-value" id="stat-stations">0</span>
+                <span class="stat-label">محطات الراديو</span>
             </div>
         </div>
         <div class="stat-card stat-amber">
@@ -126,6 +137,41 @@
                     <table id="devices-table">
                         <thead id="devices-thead"></thead>
                         <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== RADIO STATIONS SECTION ===== -->
+        <section id="stations-section" class="content-section">
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="section-title">
+                        <span class="section-badge" style="background:linear-gradient(135deg,#06b6d4,#0891b2);color:white;">محطات الراديو</span>
+                    </div>
+                    <div class="section-actions">
+                        <button class="action-btn action-report" onclick="openMainReport('stations')">
+                            <span>📄</span> التقرير
+                        </button>
+                        <button class="action-btn action-add" id="add-station-btn">
+                            <span>＋</span> إضافة محطة
+                        </button>
+                    </div>
+                </div>
+                <div class="section-toolbar">
+                    <div class="search-group">
+                        <input type="text" id="stations-search-input" class="section-search" placeholder="ابحث في محطات الراديو...">
+                        <button class="search-btn" onclick="executeSearch('stations')">🔍</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="stations-table">
+                        <thead id="stations-thead">
+                            <tr>
+                                <th>#</th><th>مكان المحطة</th><th>رقم التسلسل</th><th>TX</th><th>RX</th><th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stations-table-body"></tbody>
                     </table>
                 </div>
             </div>
@@ -537,6 +583,41 @@
                     <div class="form-group"><label>إضافي 1</label><input type="text" id="edit-purchase-modal-col1"></div>
                     <div class="form-group"><label>إضافي 2</label><input type="text" id="edit-purchase-modal-col2"></div>
                     <div class="form-group"><label>إضافي 3</label><input type="text" id="edit-purchase-modal-col3"></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">💾 حفظ التعديلات</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Station Modal -->
+    <div id="station-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-station-modal">&times;</span>
+            <h3>📡 إضافة محطة راديو</h3>
+            <form id="add-station-form">
+                <div class="form-grid">
+                    <div class="form-group"><label>مكان المحطة</label><input type="text" id="station-modal-location" required></div>
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="station-modal-serial" required></div>
+                    <div class="form-group"><label>TX</label><input type="text" id="station-modal-tx"></div>
+                    <div class="form-group"><label>RX</label><input type="text" id="station-modal-rx"></div>
+                </div>
+                <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#06b6d4,#0891b2);">💾 حفظ المحطة</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Station Modal -->
+    <div id="edit-station-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-edit-station-modal">&times;</span>
+            <h3>✏️ تعديل محطة راديو</h3>
+            <form id="edit-station-form">
+                <input type="hidden" id="edit-station-index">
+                <div class="form-grid">
+                    <div class="form-group"><label>مكان المحطة</label><input type="text" id="edit-station-modal-location" required></div>
+                    <div class="form-group"><label>رقم التسلسل</label><input type="text" id="edit-station-modal-serial" required></div>
+                    <div class="form-group"><label>TX</label><input type="text" id="edit-station-modal-tx"></div>
+                    <div class="form-group"><label>RX</label><input type="text" id="edit-station-modal-rx"></div>
                 </div>
                 <button type="submit" class="submit-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">💾 حفظ التعديلات</button>
             </form>

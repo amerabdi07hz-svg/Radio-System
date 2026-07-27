@@ -243,6 +243,7 @@ body {
 .stat-green .stat-icon { background: #d1fae5; }
 .stat-purple .stat-icon { background: #ede9fe; }
 .stat-amber .stat-icon { background: #fef3c7; }
+.stat-orange .stat-icon { background: #fff7ed; }
 
 .stat-info { display: flex; flex-direction: column; gap: 2px; }
 .stat-value {
@@ -254,6 +255,7 @@ body {
 .stat-green .stat-value { color: #059669; }
 .stat-purple .stat-value { color: #7c3aed; }
 .stat-amber .stat-value { color: #d97706; }
+.stat-orange .stat-value { color: #ea580c; }
 
 .stat-label {
     font-size: 13px;
